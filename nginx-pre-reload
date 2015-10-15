@@ -4,5 +4,24 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 
 APP="$1"; DOKKU_APP_LISTEN_PORT="$2"; DOKKU_APP_LISTEN_IP="$3"
 
-dokku_log_info1 "Configuring Faye on the web container's port via Nginx location"
-dokku_log_info2 "APP:DOKKU_APP_LISTEN_PORT:DOKKU_APP_LISTEN_IP $APP:$DOKKU_APP_LISTEN_PORT:$DOKKU_APP_LISTEN_IP"
+if [[ -f "$DOKKU_ROOT/$APP/CONTAINER.faye.1" ]]; then
+  dokku_log_info1 "Configuring Faye on the web container's port via Nginx location"
+
+  FAYE_ID=$(< "$DOKKU_ROOT/$APP/CONTAINER.faye.1")
+  FAYE_IPADDR=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $FAYE_ID)
+
+  # make sure that app-specific nginx.conf include directory exists
+  if [ ! -d "$DOKKU_ROOT/$APP/nginx.conf.d/" ]; then
+    mkdir "$DOKKU_ROOT/$APP/nginx.conf.d/"
+  fi
+
+  APP_FAYE_NGINX_TEMPLATE="$DOKKU_ROOT/$APP/faye.conf.template"
+  [[ -f "$APP_FAYE_NGINX_TEMPLATE" ]] && FAYE_NGINX_TEMPLATE="$APP_FAYE_NGINX_TEMPLATE" && dokku_log_info1 "Overriding default faye.conf with detected faye.conf.template"
+  [[ -z "$FAYE_NGINX_TEMPLATE" ]] && FAYE_NGINX_TEMPLATE="$PLUGIN_AVAILABLE_PATH/faye-nginx-location/templates/faye.conf.template"
+
+  FAYE_NGINX_CONF=$(mktemp -t "faye.conf.XXXXXX")
+  eval "cat <<< \"$(< $FAYE_NGINX_TEMPLATE)\" >> $FAYE_NGINX_CONF"
+
+  dokku_log_info1 "Creating nginx.conf.d/faye.conf"
+  mv $FAYE_NGINX_CONF "$DOKKU_ROOT/$APP/nginx.conf.d/faye.conf"
+fi
