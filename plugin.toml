@@ -1,4 +1,4 @@
 [plugin]
-description = "Running Faye on the web container's port via Nginx location"
+description = "Running WebSockets on the web container's port via Nginx location"
 version = "0.4.0"
 [plugin.config]

@@ -4,24 +4,24 @@ source "$PLUGIN_CORE_AVAILABLE_PATH/common/functions"
 
 APP="$1"; DOKKU_APP_LISTEN_PORT="$2"; DOKKU_APP_LISTEN_IP="$3"
 
-if [[ -f "$DOKKU_ROOT/$APP/CONTAINER.faye.1" ]]; then
-  dokku_log_info1 "Configuring Faye on the web container's port via Nginx location"
+if [[ -f "$DOKKU_ROOT/$APP/CONTAINER.ws.1" ]]; then
+  dokku_log_info1 "Configuring WebSockets on the web container's port via Nginx location"
 
-  FAYE_ID=$(< "$DOKKU_ROOT/$APP/CONTAINER.faye.1")
-  FAYE_IPADDR=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $FAYE_ID)
+  WS_ID=$(< "$DOKKU_ROOT/$APP/CONTAINER.ws.1")
+  WS_IPADDR=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $WS_ID)
 
   # make sure that app-specific nginx.conf include directory exists
   if [ ! -d "$DOKKU_ROOT/$APP/nginx.conf.d/" ]; then
     mkdir "$DOKKU_ROOT/$APP/nginx.conf.d/"
   fi
 
-  APP_FAYE_NGINX_TEMPLATE="$DOKKU_ROOT/$APP/faye.conf.template"
-  [[ -f "$APP_FAYE_NGINX_TEMPLATE" ]] && FAYE_NGINX_TEMPLATE="$APP_FAYE_NGINX_TEMPLATE" && dokku_log_info1 "Overriding default faye.conf with detected faye.conf.template"
-  [[ -z "$FAYE_NGINX_TEMPLATE" ]] && FAYE_NGINX_TEMPLATE="$PLUGIN_AVAILABLE_PATH/faye-nginx-location/templates/faye.conf.template"
+  APP_WS_NGINX_TEMPLATE="$DOKKU_ROOT/$APP/ws.conf.template"
+  [[ -f "$APP_WS_NGINX_TEMPLATE" ]] && WS_NGINX_TEMPLATE="$APP_WS_NGINX_TEMPLATE" && dokku_log_info1 "Overriding default faye.conf with detected ws.conf.template"
+  [[ -z "$WS_NGINX_TEMPLATE" ]] && WS_NGINX_TEMPLATE="$PLUGIN_AVAILABLE_PATH/ws-nginx-location/templates/ws.conf.template"
 
-  FAYE_NGINX_CONF=$(mktemp -t "faye.conf.XXXXXX")
-  eval "cat <<< \"$(< $FAYE_NGINX_TEMPLATE)\" >> $FAYE_NGINX_CONF"
+  WS_NGINX_CONF=$(mktemp -t "ws.conf.XXXXXX")
+  eval "cat <<< \"$(< $WS_NGINX_TEMPLATE)\" >> $WS_NGINX_CONF"
 
-  dokku_log_info1 "Creating nginx.conf.d/faye.conf"
-  mv $FAYE_NGINX_CONF "$DOKKU_ROOT/$APP/nginx.conf.d/faye.conf"
+  dokku_log_info1 "Creating nginx.conf.d/ws.conf"
+  mv $WS_NGINX_CONF "$DOKKU_ROOT/$APP/nginx.conf.d/ws.conf"
 fi
